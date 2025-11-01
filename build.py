@@ -1,16 +1,14 @@
 import os
 import subprocess
 
-print("Building evasion.sys...")
+print("[OCTOSPOON] Building evasion.sys...")
 
 os.makedirs("drivers", exist_ok=True)
 
-# Write evasion.c if not exists
-if not os.path.exists("drivers/evasion.c"):
-    with open("drivers/evasion.c", "w") as f:
-        f.write(open("drivers/evasion.c").read())  # Self-replace
+# Ensure evasion.c exists
+with open("drivers/evasion.c", "w") as f:
+    f.write(open("drivers/evasion.c", "r").read())
 
-# Compile with cl.exe (Visual Studio)
 cmd = [
     "cl", "/D_AMD64_", "/driver", "/W3", "/O2",
     "drivers/evasion.c",
@@ -20,8 +18,7 @@ cmd = [
 result = subprocess.run(cmd, capture_output=True, text=True)
 
 if result.returncode == 0:
-    print("evasion.sys built successfully!")
+    print("[OCTOSPOON] evasion.sys built!")
 else:
-    print("Build FAILED.")
+    print("[!] Build failed. Install VS + WDK")
     print(result.stderr)
-    print("\nInstall: Visual Studio + Windows SDK + WDK")
