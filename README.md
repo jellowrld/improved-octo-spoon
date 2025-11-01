@@ -1,36 +1,29 @@
-# Octo Spoon v5.0
+# OCTOSPOON v5.0
 
-**10 Injection Methods – All Working**
+**10 Injection Methods. One Spoon.**
 
-## Requirements
 
-| Tool | Install |
-|------|--------|
-| **Python 3.9+** | https://python.org |
-| **Visual Studio 2022** | Community OK |
-| **Windows SDK** | During VS install |
-| **Windows Driver Kit (WDK)** | https://learn.microsoft.com/en-us/windows-hardware/drivers/download-the-wdk |
-| **Test Signing** | `bcdedit /set testsigning on` |
+/ |    | |       / |           / __ 
+| |  __  | | ___ | (   ___  ___ | |  | | | | | |/ _ \ / _ \ _ \ / _ / _ | |  | | | |__| |  __/ || () |) |  __/ () | || | _____|_|__/|/ _|_/ __/
 
----
 
-## FULL SETUP (Step-by-Step)
+## Methods
+1. Standard  
+2. APC  
+3. Early Bird  
+4. Thread Hijack  
+5. Reflective  
+6. Manual Map  
+7. Process Hollowing  
+8. Thread Pool  
+9. **Kernel Driver (SSDT)**  
+10. **AtomBombing**
 
+## Setup
 ```powershell
-# 1. Install Visual Studio 2022
-#    → Desktop development with C++
-#    → Windows 10/11 SDK
-#    → Windows Driver Kit (WDK)
-
-# 2. Enable Test Signing
 bcdedit /set testsigning on
 Restart-Computer
 
-# 3. Install Python deps
 pip install -r requirements.txt
-
-# 4. Build driver
-python build.py
-
-# 5. Run injector
-python injector_v5.py
+python build_driver.py
+python octospoon.py
