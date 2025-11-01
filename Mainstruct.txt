@@ -1,9 +1,0 @@
-OctoSpoon/
-│
-├── octospoon.py            ← Main injector (renamed)
-├── build_driver.py         ← Compile kernel driver
-├── requirements.txt
-├── README.md
-├── banner.txt              ← ASCII art
-└── drivers/
-    └── evasion.c           ← SSDT hook
