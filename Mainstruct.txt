@@ -1,0 +1,8 @@
+Octo Spoon/
+│
+├── injector_v5.py          ← Main injector (10 methods)
+├── build.py                ← Compile kernel driver
+├── requirements.txt        ← Python dependencies
+├── drivers/
+│   └── evasion.c           ← SSDT hook driver source
+└── README.md               ← Instructions
