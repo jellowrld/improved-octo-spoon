@@ -21,8 +21,6 @@ ntdll = windll.ntdll
 psapi = windll.psapi
 user32 = windll.user32
 
-wintypes.ULONG64 = ctypes.c_uint64
-
 PROCESS_ALL_ACCESS = 0x1F0FFF
 THREAD_ALL_ACCESS = 0x1F03FF
 MEM_COMMIT = 0x1000
@@ -136,6 +134,7 @@ class CLIENT_ID(ctypes.Structure):
         ("UniqueThread", wintypes.HANDLE),
     ]
 
+wintypes.ULONG64 = ctypes.c_uint64
 # === WINAPI Function Setup ===
 # Kernel32 Functions
 kernel32.OpenProcess.argtypes = [wintypes.DWORD, wintypes.BOOL, wintypes.DWORD]
@@ -232,13 +231,13 @@ ntdll.RtlCreateUserThread.restype = wintypes.LONG
 psapi.EnumProcessModules.argtypes = [wintypes.HANDLE, POINTER(wintypes.HMODULE), wintypes.DWORD, POINTER(wintypes.DWORD)]
 psapi.EnumProcessModules.restype = wintypes.BOOL
 
-# User32 Functions
+# User32 Functions - Replace the existing SetWindowsHookEx section with this:
 user32.SetWindowsHookExW = windll.user32.SetWindowsHookExW
 user32.SetWindowsHookExW.argtypes = [ctypes.c_int, ctypes.c_void_p, wintypes.HINSTANCE, wintypes.DWORD]
-user32.SetWindowsHookExW.restype = wintypes.HHOOK
+user32.SetWindowsHookExW.restype = ctypes.c_void_p  # HHOOK is a pointer
 
 user32.UnhookWindowsHookEx = windll.user32.UnhookWindowsHookEx
-user32.UnhookWindowsHookEx.argtypes = [wintypes.HHOOK]
+user32.UnhookWindowsHookEx.argtypes = [ctypes.c_void_p]  # HHOOK
 user32.UnhookWindowsHookEx.restype = wintypes.BOOL
 
 user32.PostThreadMessageW = windll.user32.PostThreadMessageW
@@ -250,18 +249,27 @@ user32.PostThreadMessageW.restype = wintypes.BOOL
 def build_loadlibrary_shellcode(dll_path_addr, loadlib_addr, alert_addr=0):
     """Build x64 shellcode to call LoadLibraryA and optionally NtTestAlert"""
     shellcode = bytearray()
-    shellcode.extend(b'\x48\x83\xEC\x28')  # sub rsp, 0x28
-    shellcode.extend(b'\x48\xB9')  # mov rcx, dll_path
+    # sub rsp, 0x28
+    shellcode.extend(b'\x48\x83\xEC\x28')
+    # mov rcx, dll_path
+    shellcode.extend(b'\x48\xB9')
     shellcode.extend(struct.pack('<Q', dll_path_addr))
-    shellcode.extend(b'\x48\xB8')  # mov rax, LoadLibraryA
+    # mov rax, LoadLibraryA
+    shellcode.extend(b'\x48\xB8')
     shellcode.extend(struct.pack('<Q', loadlib_addr))
-    shellcode.extend(b'\xFF\xD0')  # call rax
+    # call rax
+    shellcode.extend(b'\xFF\xD0')
+    # Optional NtTestAlert
     if alert_addr:
-        shellcode.extend(b'\x48\xB8')  # mov rax, NtTestAlert
+        # mov rax, NtTestAlert
+        shellcode.extend(b'\x48\xB8')
         shellcode.extend(struct.pack('<Q', alert_addr))
-        shellcode.extend(b'\xFF\xD0')  # call rax
-    shellcode.extend(b'\x48\x83\xC4\x28')  # add rsp, 0x28
-    shellcode.extend(b'\xC3')  # ret
+        # call rax
+        shellcode.extend(b'\xFF\xD0')
+    # add rsp, 0x28
+    shellcode.extend(b'\x48\x83\xC4\x28')
+    # ret
+    shellcode.extend(b'\xC3')
     return bytes(shellcode)
 
 
@@ -667,7 +675,7 @@ class InjectorThread(QThread):
         kernel32.CloseHandle(h_process)
         self.log("AtomBombing completed")
 
-    # === 11. SetWindowsHookEx ===
+        # === 11. SetWindowsHookEx ===
     def sethook_injection(self):
         self.log("Starting SetWindowsHookEx Injection...")
         
@@ -685,18 +693,21 @@ class InjectorThread(QThread):
             if not h_module:
                 raise Exception("Failed to load DLL in local process")
             
-            # Set hook
-            hook = user32.SetWindowsHookExW(2, None, h_module, target_thread_id)  # WH_GETMESSAGE
+            # Set hook (WH_GETMESSAGE = 2)
+            hook = user32.SetWindowsHookExW(2, None, h_module, target_thread_id)
             
             if hook:
                 self.log("Hook set successfully")
+                # Post message to trigger hook
                 user32.PostThreadMessageW(target_thread_id, 0, 0, 0)
                 time.sleep(1)
                 user32.UnhookWindowsHookEx(hook)
             else:
-                raise Exception(f"SetWindowsHookEx failed (Error: {kernel32.GetLastError()})")
+                error_code = kernel32.GetLastError()
+                raise Exception(f"SetWindowsHookEx failed (Error: {error_code})")
             
             kernel32.FreeLibrary(h_module)
+            self.log("SetHook injection completed")
         except Exception as e:
             self.log(f"SetHook injection: {str(e)}")
 
@@ -850,7 +861,7 @@ class InjectorThread(QThread):
         
         kernel32.CloseHandle(h_process)
 
-    # === 16. NtTestAlert ===
+        # === 16. NtTestAlert ===
     def ntalert_injection(self):
         self.log("Starting NtTestAlert Injection...")
         
@@ -864,16 +875,10 @@ class InjectorThread(QThread):
         loadlib = kernel32.GetProcAddress(kernel32.GetModuleHandleW("kernel32.dll"), b"LoadLibraryA")
         
         # Get NtTestAlert from ntdll
-        try:
-            nt_test_alert = kernel32.GetProcAddress(ntdll._handle, b"NtTestAlert")
-            if not nt_test_alert:
-                # Try alternate name
-                nt_test_alert = kernel32.GetProcAddress(ntdll._handle, b"NtTestAlert")
-        except:
-            nt_test_alert = 0
+        nt_test_alert = kernel32.GetProcAddress(ntdll._handle, b"NtTestAlert")
         
         # Build shellcode with NtTestAlert call
-        shellcode = build_loadlibrary_shellcode(remote_mem, loadlib, nt_test_alert)
+        shellcode = build_loadlibrary_shellcode(remote_mem, loadlib, nt_test_alert if nt_test_alert else 0)
         
         remote_shellcode = kernel32.VirtualAllocEx(h_process, None, len(shellcode), MEM_COMMIT_RESERVE, PAGE_EXECUTE_READWRITE)
         kernel32.WriteProcessMemory(h_process, remote_shellcode, shellcode, len(shellcode), byref(bytes_written))
