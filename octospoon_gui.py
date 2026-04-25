@@ -14,7 +14,10 @@ from PyQt6.QtWidgets import (
 )
 from PyQt6.QtCore import Qt, QThread, pyqtSignal
 from PyQt6.QtGui import QFont
+
+# MUST be before any structure that uses ULONG64
 wintypes.ULONG64 = ctypes.c_uint64
+wintypes.LONG64 = ctypes.c_int64
 
 # === WinAPI Constants ===
 kernel32 = windll.kernel32
