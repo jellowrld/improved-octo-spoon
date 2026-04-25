@@ -14,6 +14,7 @@ from PyQt6.QtWidgets import (
 )
 from PyQt6.QtCore import Qt, QThread, pyqtSignal
 from PyQt6.QtGui import QFont
+wintypes.ULONG64 = ctypes.c_uint64
 
 # === WinAPI Constants ===
 kernel32 = windll.kernel32
@@ -133,8 +134,6 @@ class CLIENT_ID(ctypes.Structure):
         ("UniqueProcess", wintypes.HANDLE),
         ("UniqueThread", wintypes.HANDLE),
     ]
-
-wintypes.ULONG64 = ctypes.c_uint64
 # === WINAPI Function Setup ===
 # Kernel32 Functions
 kernel32.OpenProcess.argtypes = [wintypes.DWORD, wintypes.BOOL, wintypes.DWORD]
