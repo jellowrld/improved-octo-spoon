@@ -1,4 +1,3 @@
-# octospoon_gui.py - OCTOSPOON v1.0 FULL GUI + 16 INJECTION METHODS
 import sys
 import os
 import ctypes
