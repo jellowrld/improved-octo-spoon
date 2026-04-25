@@ -22,6 +22,21 @@ wintypes.ULONG_PTR = ctypes.c_ulonglong
 wintypes.LONG_PTR = ctypes.c_longlong
 wintypes.DWORD64 = ctypes.c_ulonglong
 
+# Add more missing wintypes
+wintypes.ACCESS_MASK = ctypes.c_ulong
+wintypes.LPVOID = ctypes.c_void_p
+wintypes.LPCVOID = ctypes.c_void_p
+wintypes.LPCWSTR = ctypes.c_wchar_p
+wintypes.LPWSTR = ctypes.c_wchar_p
+wintypes.LPBYTE = ctypes.POINTER(ctypes.c_byte)
+wintypes.HMODULE = wintypes.HANDLE
+wintypes.HINSTANCE = wintypes.HANDLE
+wintypes.HHOOK = wintypes.HANDLE
+wintypes.ATOM = wintypes.WORD
+wintypes.WPARAM = ctypes.c_ulonglong
+wintypes.LPARAM = ctypes.c_longlong
+wintypes.UINT = ctypes.c_uint
+
 # === WinAPI Constants ===
 kernel32 = windll.kernel32
 ntdll = windll.ntdll
@@ -217,7 +232,7 @@ kernel32.HeapAlloc.argtypes = [wintypes.HANDLE, wintypes.DWORD, ctypes.c_size_t]
 kernel32.HeapAlloc.restype = wintypes.LPVOID
 
 # NTDLL Functions
-ntdll.NtCreateSection.argtypes = [POINTER(wintypes.HANDLE), wintypes.ACCESS_MASK, POINTER(OBJECT_ATTRIBUTES), POINTER(wintypes.LARGE_INTEGER), wintypes.ULONG, wintypes.ULONG, wintypes.HANDLE]
+ntdll.NtCreateSection.argtypes = [POINTER(wintypes.HANDLE), ctypes.c_ulong, POINTER(OBJECT_ATTRIBUTES), POINTER(wintypes.LARGE_INTEGER), wintypes.ULONG, wintypes.ULONG, wintypes.HANDLE]
 ntdll.NtCreateSection.restype = wintypes.LONG
 
 ntdll.NtMapViewOfSection.argtypes = [wintypes.HANDLE, wintypes.HANDLE, POINTER(wintypes.LPVOID), wintypes.ULONG_PTR, ctypes.c_size_t, POINTER(wintypes.LARGE_INTEGER), POINTER(wintypes.ULONG), wintypes.ULONG, wintypes.ULONG, wintypes.ULONG]
