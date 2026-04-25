@@ -15,11 +15,12 @@ from PyQt6.QtWidgets import (
 from PyQt6.QtCore import Qt, QThread, pyqtSignal
 from PyQt6.QtGui import QFont
 
-# MUST be before any structure that uses ULONG64
-wintypes.ULONG64 = ctypes.c_uint64
-wintypes.LONG64 = ctypes.c_int64
-wintypes.ULONG_PTR = ctypes.c_uint64
-wintypes.LONG_PTR = ctypes.c_int64
+# Define missing wintypes attributes
+wintypes.ULONG64 = ctypes.c_ulonglong
+wintypes.LONG64 = ctypes.c_longlong
+wintypes.ULONG_PTR = ctypes.c_ulonglong
+wintypes.LONG_PTR = ctypes.c_longlong
+wintypes.DWORD64 = ctypes.c_ulonglong
 
 # === WinAPI Constants ===
 kernel32 = windll.kernel32
@@ -77,12 +78,12 @@ class PROCESS_INFORMATION(ctypes.Structure):
 
 class CONTEXT(ctypes.Structure):
     _fields_ = [
-        ("P1Home", wintypes.ULONG64),
-        ("P2Home", wintypes.ULONG64),
-        ("P3Home", wintypes.ULONG64),
-        ("P4Home", wintypes.ULONG64),
-        ("P5Home", wintypes.ULONG64),
-        ("P6Home", wintypes.ULONG64),
+        ("P1Home", ctypes.c_ulonglong),
+        ("P2Home", ctypes.c_ulonglong),
+        ("P3Home", ctypes.c_ulonglong),
+        ("P4Home", ctypes.c_ulonglong),
+        ("P5Home", ctypes.c_ulonglong),
+        ("P6Home", ctypes.c_ulonglong),
         ("ContextFlags", wintypes.DWORD),
         ("MxCsr", wintypes.DWORD),
         ("SegCs", wintypes.WORD),
@@ -92,29 +93,29 @@ class CONTEXT(ctypes.Structure):
         ("SegGs", wintypes.WORD),
         ("SegSs", wintypes.WORD),
         ("EFlags", wintypes.DWORD),
-        ("Dr0", wintypes.ULONG64),
-        ("Dr1", wintypes.ULONG64),
-        ("Dr2", wintypes.ULONG64),
-        ("Dr3", wintypes.ULONG64),
-        ("Dr6", wintypes.ULONG64),
-        ("Dr7", wintypes.ULONG64),
-        ("Rax", wintypes.ULONG64),
-        ("Rcx", wintypes.ULONG64),
-        ("Rdx", wintypes.ULONG64),
-        ("Rbx", wintypes.ULONG64),
-        ("Rsp", wintypes.ULONG64),
-        ("Rbp", wintypes.ULONG64),
-        ("Rsi", wintypes.ULONG64),
-        ("Rdi", wintypes.ULONG64),
-        ("R8", wintypes.ULONG64),
-        ("R9", wintypes.ULONG64),
-        ("R10", wintypes.ULONG64),
-        ("R11", wintypes.ULONG64),
-        ("R12", wintypes.ULONG64),
-        ("R13", wintypes.ULONG64),
-        ("R14", wintypes.ULONG64),
-        ("R15", wintypes.ULONG64),
-        ("Rip", wintypes.ULONG64),
+        ("Dr0", ctypes.c_ulonglong),
+        ("Dr1", ctypes.c_ulonglong),
+        ("Dr2", ctypes.c_ulonglong),
+        ("Dr3", ctypes.c_ulonglong),
+        ("Dr6", ctypes.c_ulonglong),
+        ("Dr7", ctypes.c_ulonglong),
+        ("Rax", ctypes.c_ulonglong),
+        ("Rcx", ctypes.c_ulonglong),
+        ("Rdx", ctypes.c_ulonglong),
+        ("Rbx", ctypes.c_ulonglong),
+        ("Rsp", ctypes.c_ulonglong),
+        ("Rbp", ctypes.c_ulonglong),
+        ("Rsi", ctypes.c_ulonglong),
+        ("Rdi", ctypes.c_ulonglong),
+        ("R8", ctypes.c_ulonglong),
+        ("R9", ctypes.c_ulonglong),
+        ("R10", ctypes.c_ulonglong),
+        ("R11", ctypes.c_ulonglong),
+        ("R12", ctypes.c_ulonglong),
+        ("R13", ctypes.c_ulonglong),
+        ("R14", ctypes.c_ulonglong),
+        ("R15", ctypes.c_ulonglong),
+        ("Rip", ctypes.c_ulonglong),
     ]
 
 class UNICODE_STRING(ctypes.Structure):
@@ -173,7 +174,7 @@ kernel32.GetCurrentProcess.restype = wintypes.HANDLE
 kernel32.OpenThread.argtypes = [wintypes.DWORD, wintypes.BOOL, wintypes.DWORD]
 kernel32.OpenThread.restype = wintypes.HANDLE
 
-kernel32.QueueUserAPC.argtypes = [wintypes.LPVOID, wintypes.HANDLE, wintypes.ULONG_PTR]
+kernel32.QueueUserAPC.argtypes = [wintypes.LPVOID, wintypes.HANDLE, ctypes.c_ulonglong]
 kernel32.QueueUserAPC.restype = wintypes.DWORD
 
 kernel32.CreateProcessW.argtypes = [wintypes.LPCWSTR, wintypes.LPWSTR, c_void_p, c_void_p, wintypes.BOOL, wintypes.DWORD, c_void_p, wintypes.LPCWSTR, POINTER(STARTUPINFOW), POINTER(PROCESS_INFORMATION)]
