@@ -1,10 +1,8 @@
 @echo off
-echo Building OCTOSPOON GUI...
-
-pip install pyqt6 pyinstaller psutil pywin32
-
-pyinstaller --onefile --noconsole octospoon_gui.py
-
+pip install pyinstaller
+pyinstaller --onefile --noconsole --icon=icon.ico --name=OctoSpoon ^
+    --add-data "drivers;drivers" ^
+    octospoon_gui.py
 echo.
-echo SUCCESS! → dist\octospoon_gui.exe
+echo Build finished! Check the "dist" folder.
 pause
