@@ -5,22 +5,24 @@ print("[OCTOSPOON] Building evasion.sys...")
 
 os.makedirs("drivers", exist_ok=True)
 
-# Ensure evasion.c exists
 if not os.path.exists("drivers/evasion.c"):
-    print("[!] evasion.c missing! Creating...")
-    with open("drivers/evasion.c", "w") as f:
-        f.write(open("drivers/evasion.c").read())  # Self-replace if needed
+    print("[!] evasion.c is missing!")
+    # Create a placeholder or exit
+    exit(1)
 
 cmd = [
-    "cl", "/D_AMD64_", "/driver", "/W3", "/O2",
+    "cl", "/D_AMD64_", "/kernel", "/W3", "/O2", "/GS-", "/Zc:wchar_t-",
     "drivers/evasion.c",
-    "/link", "/SUBSYSTEM:NATIVE", "/DRIVER", "/OUT:drivers/evasion.sys"
+    "/link", "/SUBSYSTEM:NATIVE", "/DRIVER", "/OUT:drivers/evasion.sys",
+    "/ENTRY:DriverEntry", "/DEBUG"
 ]
 
-result = subprocess.run(cmd, capture_output=True, text=True)
+result = subprocess.run(cmd, capture_output=True, text=True, shell=False)
 
 if result.returncode == 0:
-    print("[OCTOSPOON] evasion.sys built!")
+    print("[OCTOSPOON] evasion.sys built successfully!")
 else:
-    print("[!] Build failed. Install VS + WDK")
-    print(result.stderr)
+    print("[!] Build failed!")
+    print("STDOUT:", result.stdout)
+    print("STDERR:", result.stderr)
+    print("\nMake sure you're in Developer Command Prompt + WDK installed.")
