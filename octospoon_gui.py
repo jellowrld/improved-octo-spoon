@@ -18,6 +18,8 @@ from PyQt6.QtGui import QFont
 # MUST be before any structure that uses ULONG64
 wintypes.ULONG64 = ctypes.c_uint64
 wintypes.LONG64 = ctypes.c_int64
+wintypes.ULONG_PTR = ctypes.c_uint64
+wintypes.LONG_PTR = ctypes.c_int64
 
 # === WinAPI Constants ===
 kernel32 = windll.kernel32
