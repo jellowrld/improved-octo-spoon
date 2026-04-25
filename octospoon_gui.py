@@ -21,6 +21,8 @@ ntdll = windll.ntdll
 psapi = windll.psapi
 user32 = windll.user32
 
+wintypes.ULONG64 = ctypes.c_uint64
+
 PROCESS_ALL_ACCESS = 0x1F0FFF
 THREAD_ALL_ACCESS = 0x1F03FF
 MEM_COMMIT = 0x1000
